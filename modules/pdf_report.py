@@ -1,6 +1,14 @@
 from __future__ import annotations
 import io
 import os
+import sys
+
+# --- FIX FOR STREAMLIT CLOUD PATH ENGINE CONFLICT ---
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if CURRENT_DIR not in sys.path:
+    sys.path.append(CURRENT_DIR)
+# ----------------------------------------------------
+
 from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -153,7 +161,7 @@ def build_single_pdf(audit, chart_pngs, format_check=None):
     styles = _styles()
     story = []
     
-    # Defensive programming: Ensure chart_pngs is always a dictionary object
+    # Secure validation check for dictionary typing
     if not isinstance(chart_pngs, dict):
         chart_pngs = {}
 
@@ -237,10 +245,6 @@ def build_single_pdf(audit, chart_pngs, format_check=None):
 def build_bulk_pdf(audits, chart_pngs, format_checks=None) -> dict[str, bytes]:
     """
     Generates a collection of separate, individual report data packets.
-    Returns:
-        dict: A lookup table where:
-            - key "SUMMARY_OVERVIEW": Master ranking analytics file bytes.
-            - key "[Candidate Name]": Individual comprehensive score sheet data bytes.
     """
     format_checks = format_checks or [None] * len(audits)
     pdf_output_collection = {}
@@ -266,7 +270,6 @@ def build_bulk_pdf(audits, chart_pngs, format_checks=None) -> dict[str, bytes]:
             summary_story.append(Image(io.BytesIO(chart_pngs["histogram"]), width=15 * cm, height=5.6 * cm))
             summary_story.append(Spacer(1, 0.3 * cm))
 
-    # Construct overall candidate placement dynamic index table
     header = [_P(f"<b>{h}</b>", styles) for h in ["#", "Candidate", "Overall", "JD", "Exp", "Quality", "Verdict"]]
     rows = [header]
     paired = sorted(zip(audits, format_checks), key=lambda p: p[0].get("overall_score", 0), reverse=True)
@@ -302,17 +305,12 @@ def build_bulk_pdf(audits, chart_pngs, format_checks=None) -> dict[str, bytes]:
     # -------------------------------------------------------------------------
     # PART B: GENERATE INDEPENDENT FILES FOR EACH UNIQUE RESUME
     # -------------------------------------------------------------------------
-    # Cross-Environment safe import pattern for Cloud vs Local Servers
-    try:
-        import charts
-    except ImportError:
-        from modules import charts
+    import charts
 
     for a, fc in paired:
         candidate_name = a.get("candidate_name", "Unknown_Candidate").strip().replace(" ", "_")
         skills = a.get("skills") or {}
         
-        # Build individual chart visuals for each candidate sheet on the fly safely
         indiv_charts = {}
         try:
             indiv_charts["gauge"] = charts.fig_to_png_bytes(charts.gauge(a.get("overall_score", 0)))
@@ -328,10 +326,8 @@ def build_bulk_pdf(audits, chart_pngs, format_checks=None) -> dict[str, bytes]:
                 width=900, height=380,
             )
         except Exception:
-            # Fallback to empty dict to keep code robust if an individual generation error happens
             indiv_charts = {}
 
-        # Safely pass the individual metrics along to build the candidate report
         pdf_output_collection[candidate_name] = build_single_pdf(a, indiv_charts, format_check=fc)
 
     return pdf_output_collection
