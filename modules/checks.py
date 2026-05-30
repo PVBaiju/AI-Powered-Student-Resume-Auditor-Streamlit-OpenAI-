@@ -2,6 +2,15 @@ from __future__ import annotations
 import io
 import re
 from pypdf import PdfReader
+from PIL import Image as PILImage
+
+# Computer Vision components for deep profile photo analysis
+try:
+    import cv2
+    import numpy as np
+    OPENCV_AVAILABLE = True
+except ImportError:
+    OPENCV_AVAILABLE = False
 
 REQUIRED_CERTS = [
     "DP-900", "DP900", "DP-700", "DP700",
@@ -9,10 +18,13 @@ REQUIRED_CERTS = [
     "Databricks GenAI", "Databricks Generative AI",
 ]
 KEY_SKILLS = ["Azure", "ADF", "SQL", "Python", "PySpark", "Databricks"]
+
+# Added GitHub verification rules to standard mapping filters
 CONTACT_PATTERNS = {
     "email":    r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
     "phone":    r"(\+?\d[\d\s\-().]{7,}\d)",
     "linkedin": r"linkedin\.com/in/[A-Za-z0-9\-_/]+",
+    "github":   r"github\.com/[A-Za-z0-9\-_]+",
 }
 
 
@@ -26,29 +38,94 @@ def get_page_count(file_name: str, file_bytes: bytes) -> int:
         return 0
 
 
+def _is_actual_face(pil_img: PILImage) -> bool:
+    """
+    Applies Computer Vision (Haar Cascades) to detect actual human faces and eyes.
+    Instantly filters out badges, logos, abstracts, and shapes.
+    """
+    if not OPENCV_AVAILABLE:
+        if pil_img.mode in ("P", "1", "L"):
+            return False
+        unique_colors = pil_img.convert("RGB").getcolors(maxcolors=4000)
+        return unique_colors is None
+
+    try:
+        img_rgb = pil_img.convert("RGB")
+        img_np = np.array(img_rgb)
+        img_bgr = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+
+        face_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        eye_path = cv2.data.haarcascades + "haarcascade_eye.xml"
+        
+        face_cascade = cv2.CascadeClassifier(face_path)
+        eye_cascade = cv2.CascadeClassifier(eye_path)
+
+        if face_cascade.empty() or eye_cascade.empty():
+            unique_colors = pil_img.convert("RGB").getcolors(maxcolors=4000)
+            return unique_colors is None
+
+        # Detect clear facial landscapes
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=4, minSize=(40, 40))
+
+        # Confirm eye features match parameters inside the face target box
+        for (x, y, w, h) in faces:
+            roi_gray = gray[y:y+h, x:x+w]
+            eyes = eye_cascade.detectMultiScale(roi_gray, scaleFactor=1.05, minNeighbors=2)
+            if len(eyes) >= 1:
+                return True
+                
+        return False
+    except Exception:
+        return False
+
+
 def has_profile_photo(file_name: str, file_bytes: bytes) -> bool:
-    """Detect if PDF/DOCX likely contains an embedded image (proxy for profile photo)."""
-    name = file_name.lower()
+    """Detect if PDF/DOCX contains an authentic face portrait on Page 1."""
+    name = file_name.lower().strip()
+    
     if name.endswith(".pdf"):
         try:
             reader = PdfReader(io.BytesIO(file_bytes))
-            for page in reader.pages[:2]:  # photo usually on first page
-                if "/XObject" in page.get("/Resources", {}):
-                    xobjs = page["/Resources"]["/XObject"].get_object()
-                    for obj_name in xobjs:
-                        obj = xobjs[obj_name]
-                        if obj.get("/Subtype") == "/Image":
+            if not reader.pages:
+                return False
+            
+            first_page = reader.pages[0]
+            for img_obj in first_page.images:
+                try:
+                    with PILImage.open(io.BytesIO(img_obj.data)) as img:
+                        width, height = img.size
+                        aspect_ratio = width / height
+                        
+                        if not (0.65 <= aspect_ratio <= 1.4):
+                            continue
+                        if not (100 <= width <= 900 and 100 <= height <= 900):
+                            continue
+                        
+                        if _is_actual_face(img):
                             return True
+                except Exception:
+                    continue
         except Exception:
             return False
+
     elif name.endswith(".docx"):
-        # docx is a zip; images are stored as media/ entries
         try:
             import zipfile
             with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
-                return any(n.startswith("word/media/") for n in z.namelist())
+                media_files = [n for n in z.namelist() if n.startswith("word/media/")]
+                for media_file in media_files:
+                    with z.open(media_file) as img_file:
+                        with PILImage.open(img_file) as img:
+                            width, height = img.size
+                            aspect_ratio = width / height
+                            
+                            if (0.65 <= aspect_ratio <= 1.4) and (100 <= width <= 900 and 100 <= height <= 900):
+                                if _is_actual_face(img):
+                                    return True
         except Exception:
             return False
+
     return False
 
 
@@ -81,6 +158,7 @@ def contact_completeness(text: str) -> dict:
         "email":    bool(re.search(CONTACT_PATTERNS["email"], text)),
         "phone":    bool(re.search(CONTACT_PATTERNS["phone"], text)),
         "linkedin": bool(re.search(CONTACT_PATTERNS["linkedin"], text, re.I)),
+        "github":   bool(re.search(CONTACT_PATTERNS["github"], text, re.I)),
     }
 
 
@@ -95,7 +173,6 @@ def certifications_found(text: str) -> list:
     for c in REQUIRED_CERTS:
         if c.lower() in t:
             found.append(c)
-    # dedupe (DP-900 vs DP900)
     return sorted({c.replace("-", "").upper() for c in found})
 
 
@@ -110,11 +187,13 @@ def build_format_checklist(file_name: str, file_bytes: bytes, text: str, years_e
     kw = keywords_found(text)
     certs = certifications_found(text)
 
+    # Added GitHub to compliance engine layout matrix tracking 
     items = [
         {"item": "Profile photo embedded",     "passed": photo,                  "note": ""},
         {"item": "Email present",              "passed": contact["email"],       "note": ""},
         {"item": "Phone present",              "passed": contact["phone"],       "note": ""},
         {"item": "LinkedIn profile link",      "passed": contact["linkedin"],    "note": ""},
+        {"item": "GitHub portfolio link",      "passed": contact["github"],      "note": ""},
         {"item": "PDF format",                 "passed": pdf_ok,                 "note": "" if pdf_ok else "Convert to PDF"},
         {"item": "Filename format",            "passed": fname_ok,
          "note": "Expected: RESUME AZURE DATA ENGINEER_<NAME>.pdf"},

@@ -2,7 +2,6 @@ from __future__ import annotations
 import plotly.graph_objects as go
 import pandas as pd
 
-
 BRAND = {
     "primary": "#0F4C81",
     "accent": "#16A085",

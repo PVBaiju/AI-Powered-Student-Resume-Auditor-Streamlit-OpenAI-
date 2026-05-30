@@ -45,7 +45,6 @@ def _styles():
 
 
 def _logo_image(max_w_cm=3.5, max_h_cm=1.5):
-    """Return ReportLab Image if logo exists, else None."""
     if LOGO_PATH and os.path.exists(LOGO_PATH):
         try:
             return Image(LOGO_PATH, width=max_w_cm * cm, height=max_h_cm * cm, kind="proportional")
@@ -55,7 +54,6 @@ def _logo_image(max_w_cm=3.5, max_h_cm=1.5):
 
 
 def _branded_header(styles, title, subtitle=""):
-    """Returns the header flowable: logo (left) + org name (right) + title bar."""
     logo = _logo_image()
     left = logo if logo else Paragraph("", styles["Body2"])
     right = [
@@ -88,12 +86,10 @@ def _footer(canvas, doc):
 
 
 def _P(text, styles, style="Body2"):
-    """Wrap plain text in a Paragraph for auto word-wrap."""
     return Paragraph(str(text) if text is not None else "—", styles[style])
 
 
 def _kv_table(rows, styles):
-    """rows: list of (label, value). Value gets wrapped in Paragraph."""
     data = [[_P(f"<b>{k}</b>", styles), _P(v, styles)] for k, v in rows]
     t = Table(data, colWidths=[5 * cm, 11.4 * cm])
     t.setStyle(TableStyle([
@@ -117,7 +113,6 @@ def _bullets(items, styles):
 
 
 def _checklist_table(items, styles, score_label=""):
-    """items: [{item, passed, note}]"""
     header = [_P("<b>Check</b>", styles), _P("<b>Status</b>", styles), _P("<b>Note</b>", styles)]
     rows = [header]
     for it in items:
@@ -205,7 +200,6 @@ def build_single_pdf(audit, chart_pngs, format_check=None):
     story.append(skill_t)
     story.append(Spacer(1, 0.4 * cm))
 
-    # Format compliance (rule-based)
     if format_check:
         story.append(Paragraph(
             f"Org Format Compliance — {format_check['passed']}/{format_check['total']} passed "
@@ -213,7 +207,6 @@ def build_single_pdf(audit, chart_pngs, format_check=None):
         story.append(_checklist_table(format_check["items"], styles))
         story.append(Spacer(1, 0.3 * cm))
 
-    # Section compliance (LLM)
     sec = audit.get("section_compliance") or []
     if sec:
         story.append(Paragraph("Section-by-Section Review (AI)", styles["H2Brand"]))
@@ -237,7 +230,6 @@ def build_single_pdf(audit, chart_pngs, format_check=None):
 
 
 def build_bulk_pdf(audits, chart_pngs, format_checks=None):
-    """format_checks: list aligned with audits (or None)."""
     format_checks = format_checks or [None] * len(audits)
     buf = io.BytesIO()
     doc = _doc(buf, "Bulk Resume Audit Report")
