@@ -152,6 +152,11 @@ def build_single_pdf(audit, chart_pngs, format_check=None):
     doc = _doc(buf, f"Resume Audit — {audit.get('candidate_name','Candidate')}")
     styles = _styles()
     story = []
+    
+    # Defensive programming: Ensure chart_pngs is always a dictionary object
+    if not isinstance(chart_pngs, dict):
+        chart_pngs = {}
+
     name = audit.get("candidate_name", "Candidate")
     story += _branded_header(styles, "Resume Audit Report", f"Candidate: {name}")
 
@@ -253,12 +258,13 @@ def build_bulk_pdf(audits, chart_pngs, format_checks=None) -> dict[str, bytes]:
         f"{len(audits)} candidates · Generated on {datetime.now().strftime('%d %b %Y, %H:%M')}"
     )
 
-    if chart_pngs.get("ranking"):
-        summary_story.append(Image(io.BytesIO(chart_pngs["ranking"]), width=15 * cm, height=7.5 * cm))
-        summary_story.append(Spacer(1, 0.3 * cm))
-    if chart_pngs.get("histogram"):
-        summary_story.append(Image(io.BytesIO(chart_pngs["histogram"]), width=15 * cm, height=5.6 * cm))
-        summary_story.append(Spacer(1, 0.3 * cm))
+    if chart_pngs and isinstance(chart_pngs, dict):
+        if chart_pngs.get("ranking"):
+            summary_story.append(Image(io.BytesIO(chart_pngs["ranking"]), width=15 * cm, height=7.5 * cm))
+            summary_story.append(Spacer(1, 0.3 * cm))
+        if chart_pngs.get("histogram"):
+            summary_story.append(Image(io.BytesIO(chart_pngs["histogram"]), width=15 * cm, height=5.6 * cm))
+            summary_story.append(Spacer(1, 0.3 * cm))
 
     # Construct overall candidate placement dynamic index table
     header = [_P(f"<b>{h}</b>", styles) for h in ["#", "Candidate", "Overall", "JD", "Exp", "Quality", "Verdict"]]
@@ -296,51 +302,37 @@ def build_bulk_pdf(audits, chart_pngs, format_checks=None) -> dict[str, bytes]:
     # -------------------------------------------------------------------------
     # PART B: GENERATE INDEPENDENT FILES FOR EACH UNIQUE RESUME
     # -------------------------------------------------------------------------
+    # Cross-Environment safe import pattern for Cloud vs Local Servers
+    try:
+        import charts
+    except ImportError:
+        from modules import charts
+
     for a, fc in paired:
         candidate_name = a.get("candidate_name", "Unknown_Candidate").strip().replace(" ", "_")
+        skills = a.get("skills") or {}
         
-        indiv_buf = io.BytesIO()
-        indiv_doc = _doc(indiv_buf, f"Audit Report — {a.get('candidate_name', '—')}")
-        indiv_story = []
-        
-        # Build individual header card layout
-        indiv_story += _branded_header(
-            styles, "Individual Resume Audit Detail", f"Candidate Name: {a.get('candidate_name','—')}"
-        )
-        
-        indiv_story.append(Paragraph(a.get("headline", ""), styles["Muted"]))
-        indiv_story.append(Spacer(1, 0.2 * cm))
-        
-        indiv_story.append(_kv_table([
-            ("Verdict", a.get("verdict", "—")),
-            ("Overall Score", f"{a.get('overall_score', 0)} / 100"),
-            ("JD Match Score", f"{a.get('jd_match_score', 0)} / 100"),
-            ("Quality Score", f"{a.get('quality_score', 0)} / 100"),
-            ("Experience Score", f"{a.get('experience_score', 0)} / 100"),
-            ("Org-Standard Score", f"{a.get('org_standard_score', 0)} / 100"),
-            ("Seniority Fit", a.get("seniority_fit", "—")),
-        ], styles))
-        indiv_story.append(Spacer(1, 0.25 * cm))
-        
-        if fc:
-            indiv_story.append(Paragraph(
-                f"Format Compliance — {fc['passed']}/{fc['total']} ({fc['score']}%)",
-                styles["H2Brand"]))
-            indiv_story.append(_checklist_table(fc["items"], styles))
-            indiv_story.append(Spacer(1, 0.2 * cm))
-            
-        indiv_story.append(Paragraph("Strengths", styles["H2Brand"]))
-        indiv_story += _bullets(a.get("strengths"), styles)
-        indiv_story.append(Paragraph("Weaknesses", styles["H2Brand"]))
-        indiv_story += _bullets(a.get("weaknesses"), styles)
-        indiv_story.append(Paragraph("Red Flags", styles["H2Brand"]))
-        indiv_story += _bullets(a.get("red_flags"), styles)
-        
-        # Build the document binary
-        indiv_doc.build(indiv_story, onFirstPage=_footer, onLaterPages=_footer)
-        
-        # Save bytes data directly linked against candidate structural key reference
-        pdf_output_collection[candidate_name] = indiv_buf.getvalue()
+        # Build individual chart visuals for each candidate sheet on the fly safely
+        indiv_charts = {}
+        try:
+            indiv_charts["gauge"] = charts.fig_to_png_bytes(charts.gauge(a.get("overall_score", 0)))
+            indiv_charts["radar"] = charts.fig_to_png_bytes(charts.radar({
+                "ATS": a.get("ats_score", 0),
+                "Quality": a.get("quality_score", 0),
+                "JD Match": a.get("jd_match_score", 0),
+                "Experience": a.get("experience_score", 0),
+                "Overall": a.get("overall_score", 0),
+            }))
+            indiv_charts["donut"] = charts.fig_to_png_bytes(
+                charts.donut_skills(skills.get("matched"), skills.get("missing"), skills.get("additional")),
+                width=900, height=380,
+            )
+        except Exception:
+            # Fallback to empty dict to keep code robust if an individual generation error happens
+            indiv_charts = {}
+
+        # Safely pass the individual metrics along to build the candidate report
+        pdf_output_collection[candidate_name] = build_single_pdf(a, indiv_charts, format_check=fc)
 
     return pdf_output_collection
 
@@ -356,12 +348,14 @@ def build_compare_pdf(comparison, chart_pngs):
         ("Why", comparison.get("why_winner", "—")),
     ], styles))
     story.append(Spacer(1, 0.3 * cm))
-    if chart_pngs.get("bar"):
-        story.append(Image(io.BytesIO(chart_pngs["bar"]), width=15 * cm, height=7.5 * cm))
-        story.append(Spacer(1, 0.3 * cm))
-    if chart_pngs.get("ranking"):
-        story.append(Image(io.BytesIO(chart_pngs["ranking"]), width=15 * cm, height=6.5 * cm))
-        story.append(Spacer(1, 0.3 * cm))
+    
+    if chart_pngs and isinstance(chart_pngs, dict):
+        if chart_pngs.get("bar"):
+            story.append(Image(io.BytesIO(chart_pngs["bar"]), width=15 * cm, height=7.5 * cm))
+            story.append(Spacer(1, 0.3 * cm))
+        if chart_pngs.get("ranking"):
+            story.append(Image(io.BytesIO(chart_pngs["ranking"]), width=15 * cm, height=6.5 * cm))
+            story.append(Spacer(1, 0.3 * cm))
 
     header = [_P(f"<b>{h}</b>", styles) for h in ["Rank", "Candidate", "Overall", "JD", "Exp", "Quality", "Verdict"]]
     rows = [header]
