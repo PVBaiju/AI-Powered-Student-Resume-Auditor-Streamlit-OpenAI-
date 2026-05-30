@@ -229,26 +229,42 @@ def build_single_pdf(audit, chart_pngs, format_check=None):
     return buf.getvalue()
 
 
-def build_bulk_pdf(audits, chart_pngs, format_checks=None):
+def build_bulk_pdf(audits, chart_pngs, format_checks=None) -> dict[str, bytes]:
+    """
+    Generates a collection of separate, individual report data packets.
+    Returns:
+        dict: A lookup table where:
+            - key "SUMMARY_OVERVIEW": Master ranking analytics file bytes.
+            - key "[Candidate Name]": Individual comprehensive score sheet data bytes.
+    """
     format_checks = format_checks or [None] * len(audits)
-    buf = io.BytesIO()
-    doc = _doc(buf, "Bulk Resume Audit Report")
+    pdf_output_collection = {}
     styles = _styles()
-    story = []
-    story += _branded_header(
+
+    # -------------------------------------------------------------------------
+    # PART A: GENERATE SEPARATE MASTER SUMMARY REPORT FIRST
+    # -------------------------------------------------------------------------
+    summary_buf = io.BytesIO()
+    summary_doc = _doc(summary_buf, "Bulk Overview Analytics Master Summary")
+    summary_story = []
+    
+    summary_story += _branded_header(
         styles, "Bulk Resume Audit Report",
-        f"{len(audits)} candidates · Generated on {datetime.now().strftime('%d %b %Y, %H:%M')}")
+        f"{len(audits)} candidates · Generated on {datetime.now().strftime('%d %b %Y, %H:%M')}"
+    )
 
     if chart_pngs.get("ranking"):
-        story.append(Image(io.BytesIO(chart_pngs["ranking"]), width=15 * cm, height=7.5 * cm))
-        story.append(Spacer(1, 0.3 * cm))
+        summary_story.append(Image(io.BytesIO(chart_pngs["ranking"]), width=15 * cm, height=7.5 * cm))
+        summary_story.append(Spacer(1, 0.3 * cm))
     if chart_pngs.get("histogram"):
-        story.append(Image(io.BytesIO(chart_pngs["histogram"]), width=15 * cm, height=5.6 * cm))
-        story.append(Spacer(1, 0.3 * cm))
+        summary_story.append(Image(io.BytesIO(chart_pngs["histogram"]), width=15 * cm, height=5.6 * cm))
+        summary_story.append(Spacer(1, 0.3 * cm))
 
+    # Construct overall candidate placement dynamic index table
     header = [_P(f"<b>{h}</b>", styles) for h in ["#", "Candidate", "Overall", "JD", "Exp", "Quality", "Verdict"]]
     rows = [header]
     paired = sorted(zip(audits, format_checks), key=lambda p: p[0].get("overall_score", 0), reverse=True)
+    
     for i, (a, _) in enumerate(paired, 1):
         rows.append([
             _P(str(i), styles),
@@ -259,8 +275,9 @@ def build_bulk_pdf(audits, chart_pngs, format_checks=None):
             _P(a.get("quality_score", 0), styles),
             _P(a.get("verdict", "—"), styles, "Body2Small"),
         ])
-    t = Table(rows, colWidths=[0.9 * cm, 5 * cm, 1.7 * cm, 1.3 * cm, 1.3 * cm, 1.7 * cm, 4.5 * cm])
-    t.setStyle(TableStyle([
+        
+    summary_table = Table(rows, colWidths=[0.9 * cm, 5 * cm, 1.7 * cm, 1.3 * cm, 1.3 * cm, 1.7 * cm, 4.5 * cm])
+    summary_table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), BRAND_PRIMARY),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -271,38 +288,61 @@ def build_bulk_pdf(audits, chart_pngs, format_checks=None):
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, BRAND_LIGHT]),
         ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E8EB")),
     ]))
-    story.append(t)
+    summary_story.append(summary_table)
+    
+    summary_doc.build(summary_story, onFirstPage=_footer, onLaterPages=_footer)
+    pdf_output_collection["SUMMARY_OVERVIEW"] = summary_buf.getvalue()
 
+    # -------------------------------------------------------------------------
+    # PART B: GENERATE INDEPENDENT FILES FOR EACH UNIQUE RESUME
+    # -------------------------------------------------------------------------
     for a, fc in paired:
-        story.append(PageBreak())
-        story.append(Paragraph(f"Candidate: {a.get('candidate_name','—')}", styles["H1Brand"]))
-        story.append(Paragraph(a.get("headline", ""), styles["Muted"]))
-        story.append(Spacer(1, 0.2 * cm))
-        story.append(_kv_table([
+        candidate_name = a.get("candidate_name", "Unknown_Candidate").strip().replace(" ", "_")
+        
+        indiv_buf = io.BytesIO()
+        indiv_doc = _doc(indiv_buf, f"Audit Report — {a.get('candidate_name', '—')}")
+        indiv_story = []
+        
+        # Build individual header card layout
+        indiv_story += _branded_header(
+            styles, "Individual Resume Audit Detail", f"Candidate Name: {a.get('candidate_name','—')}"
+        )
+        
+        indiv_story.append(Paragraph(a.get("headline", ""), styles["Muted"]))
+        indiv_story.append(Spacer(1, 0.2 * cm))
+        
+        indiv_story.append(_kv_table([
             ("Verdict", a.get("verdict", "—")),
-            ("Overall", f"{a.get('overall_score', 0)} / 100"),
-            ("JD Match", f"{a.get('jd_match_score', 0)} / 100"),
-            ("Quality", f"{a.get('quality_score', 0)} / 100"),
-            ("Experience", f"{a.get('experience_score', 0)} / 100"),
-            ("Org-Standard", f"{a.get('org_standard_score', 0)} / 100"),
+            ("Overall Score", f"{a.get('overall_score', 0)} / 100"),
+            ("JD Match Score", f"{a.get('jd_match_score', 0)} / 100"),
+            ("Quality Score", f"{a.get('quality_score', 0)} / 100"),
+            ("Experience Score", f"{a.get('experience_score', 0)} / 100"),
+            ("Org-Standard Score", f"{a.get('org_standard_score', 0)} / 100"),
             ("Seniority Fit", a.get("seniority_fit", "—")),
         ], styles))
-        story.append(Spacer(1, 0.25 * cm))
+        indiv_story.append(Spacer(1, 0.25 * cm))
+        
         if fc:
-            story.append(Paragraph(
+            indiv_story.append(Paragraph(
                 f"Format Compliance — {fc['passed']}/{fc['total']} ({fc['score']}%)",
                 styles["H2Brand"]))
-            story.append(_checklist_table(fc["items"], styles))
-            story.append(Spacer(1, 0.2 * cm))
-        story.append(Paragraph("Strengths", styles["H2Brand"]))
-        story += _bullets(a.get("strengths"), styles)
-        story.append(Paragraph("Weaknesses", styles["H2Brand"]))
-        story += _bullets(a.get("weaknesses"), styles)
-        story.append(Paragraph("Red Flags", styles["H2Brand"]))
-        story += _bullets(a.get("red_flags"), styles)
+            indiv_story.append(_checklist_table(fc["items"], styles))
+            indiv_story.append(Spacer(1, 0.2 * cm))
+            
+        indiv_story.append(Paragraph("Strengths", styles["H2Brand"]))
+        indiv_story += _bullets(a.get("strengths"), styles)
+        indiv_story.append(Paragraph("Weaknesses", styles["H2Brand"]))
+        indiv_story += _bullets(a.get("weaknesses"), styles)
+        indiv_story.append(Paragraph("Red Flags", styles["H2Brand"]))
+        indiv_story += _bullets(a.get("red_flags"), styles)
+        
+        # Build the document binary
+        indiv_doc.build(indiv_story, onFirstPage=_footer, onLaterPages=_footer)
+        
+        # Save bytes data directly linked against candidate structural key reference
+        pdf_output_collection[candidate_name] = indiv_buf.getvalue()
 
-    doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
-    return buf.getvalue()
+    return pdf_output_collection
 
 
 def build_compare_pdf(comparison, chart_pngs):

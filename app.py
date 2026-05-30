@@ -47,6 +47,20 @@ st.markdown(HIDE_STREAMLIT_HEADER, unsafe_allow_html=True)
 # Hide Streamlit Header (Deploy Button & Menu) END*
 # =========================================================
 
+# ---------------- LOGOUT CONFIRMATION MODAL ----------------
+@st.dialog("Confirm Sign Out")
+def show_logout_dialog():
+    st.markdown("<p style='font-size: 1.05rem; margin-bottom: 16px;'>Are you sure you want to log out of the platform?</p>", unsafe_allow_html=True)
+    col_yes, col_no = st.columns(2)
+    with col_yes:
+        if st.button("✔️ Yes, Logout", use_container_width=True, type="primary", key="modal_confirm_yes"):
+            st.session_state.logged_in = False
+            st.session_state.role = ""
+            st.rerun()
+    with col_no:
+        if st.button("❌ No, Cancel", use_container_width=True, type="secondary", key="modal_confirm_no"):
+            st.rerun()
+
 # ---------------- SESSION INITIALIZATION ----------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -260,14 +274,14 @@ if not st.session_state.logged_in:
             )
             username = st.text_input(
                 "Username", 
-                placeholder="Enter official username", 
+                placeholder="Enter username", 
                 key="login_username", 
                 label_visibility="collapsed"
             )
             password = st.text_input(
                 "Password", 
                 type="password", 
-                placeholder="Enter secure password", 
+                placeholder="Enter password", 
                 key="login_password", 
                 label_visibility="collapsed"
             )
@@ -445,8 +459,8 @@ with st.sidebar:
     st.markdown(
         """
         <div style="margin-bottom: 12px;">
-            <div style="color: #38bdf8; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em;">
-                📊 VisionBoard Intelligence
+            <div style="color: #38bdf8; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">
+                🌟 VisionBoard
             </div>
             <div style="color: #94a3b8; font-size: 0.82rem; font-weight: 500; margin-top: 2px;">
                 Enterprise Talent Analytics Platform
@@ -482,10 +496,11 @@ with st.sidebar:
     st.markdown("---")
     st.caption("💡 Add a Job Description to enhance match scoring.")
     
-    if st.button("🔓 Logout", use_container_width=True, type="primary"):
-        st.session_state.logged_in = False
-        st.session_state.role = ""
-        st.rerun()
+    # ----------------------Initialize a logout confirmation state flag if it doesn't exist--- functio() @line 50
+    
+    # Clean modal trigger button placed back in its original position
+    if st.button("🔓 Logout", use_container_width=True, type="primary", key="sidebar_logout_trigger"):
+        show_logout_dialog()
 # =========================================================
 # SIDEBAR END*
 # =========================================================
@@ -808,6 +823,10 @@ elif mode == "Bulk Audit":
                 render_audit_view(a, key_prefix=f"bulk_{idx}")
 
         st.markdown("---")
+        
+        # ---------------------------------------------------------------------
+        # MODIFIED: Dynamically parse multi-file PDF output packets
+        # ---------------------------------------------------------------------
         col1, col2 = st.columns(2)
         with col1:
             try:
@@ -815,17 +834,36 @@ elif mode == "Bulk Audit":
                     "ranking": charts.fig_to_png_bytes(charts.horizontal_ranking(df), width=900, height=max(360, 60*len(df))),
                     "histogram": charts.fig_to_png_bytes(charts.bulk_histogram(df["overall_score"].tolist()), width=900, height=340),
                 }
-                pdf_bytes = pdf_report.build_bulk_pdf(
+                
+                # Execution returns dictionary containing individual files instead of a single joint file
+                reports_dictionary = pdf_report.build_bulk_pdf(
                     audits, pngs,
                     format_checks=[a.get("_format_check") for a in audits],
                 )
+                
+                # A. Render Master Summary Overview File Download Option
                 st.download_button(
-                    "📥 Download Bulk PDF Report",
-                    data=pdf_bytes,
-                    file_name=f"bulk_resume_audit_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                    "📊 Download Bulk Overview Summary Report",
+                    data=reports_dictionary["SUMMARY_OVERVIEW"],
+                    file_name=f"bulk_summary_overview_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
                     mime="application/pdf",
                     use_container_width=True,
                 )
+                
+                # B. Render separate independent files dropdown matrix
+                st.markdown("#### 📥 Download Individual Candidate Reports")
+                for candidate_key, pdf_data in reports_dictionary.items():
+                    if candidate_key == "SUMMARY_OVERVIEW":
+                        continue
+                    
+                    readable_candidate_name = candidate_key.replace("_", " ")
+                    st.download_button(
+                        label=f"📄 Download Report — {readable_candidate_name}",
+                        data=pdf_data,
+                        file_name=f"Resume_Audit_Report_{candidate_key}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True,
+                    )
             except Exception as e:
                 st.error(f"PDF render error: {e}")
         with col2:
