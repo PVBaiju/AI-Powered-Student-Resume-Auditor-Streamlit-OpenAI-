@@ -32,20 +32,16 @@ st.set_page_config(
 )
 
 # =========================================================
-# Hide Streamlit Header (Deploy Button & Menu) START*
+# Hide Streamlit Header (Deploy Button & Menu)
 # =========================================================
 HIDE_STREAMLIT_HEADER = """
 <style>
 header {visibility: hidden; display: none;}
 [data-testid="stHeader"] {visibility: hidden; display: none;}
-/* Optional: Reduce the huge top whitespace left behind */
 .main .block-container {padding-top: 2rem;}
 </style>
 """
 st.markdown(HIDE_STREAMLIT_HEADER, unsafe_allow_html=True)
-# =========================================================
-# Hide Streamlit Header (Deploy Button & Menu) END*
-# =========================================================
 
 # ---------------- LOGOUT CONFIRMATION MODAL ----------------
 @st.dialog("Confirm Sign Out")
@@ -68,7 +64,6 @@ if "logged_in" not in st.session_state:
 if "role" not in st.session_state:
     st.session_state.role = ""
 
-# Key-rotation counters to cleanly reset and flush widget dropzones on clear commands
 if "single_version" not in st.session_state:
     st.session_state["single_version"] = 0
 if "bulk_version" not in st.session_state:
@@ -77,14 +72,13 @@ if "compare_version" not in st.session_state:
     st.session_state["compare_version"] = 0
 
 # =========================================================
-# Login Page START*
+# LOGIN PAGE
 # =========================================================
 if not st.session_state.logged_in:
 
     if "form_version" not in st.session_state:
         st.session_state["form_version"] = 0
 
-    # Read and encode the local background image safely
     bg_style_rule = ""
     if os.path.exists("login_banner.jpg"):
         with open("login_banner.jpg", "rb") as image_file:
@@ -114,55 +108,24 @@ if not st.session_state.logged_in:
         *, *:before, *:after {{
             box-sizing: border-box !important;
         }}
-
         [data-testid="stAppViewContainer"] {{
             background-color: #07111a !important;
             position: relative;
         }}
-
         {bg_style_rule}
-
         [data-testid="stHeader"] {{
             background: transparent;
         }}
-
-        #MainMenu, footer, header {{
-            visibility: hidden;
-            display: none;
-        }}
-
         .main .block-container {{
             padding-top: 10vh;
             padding-bottom: 2rem;
             max-width: 100%;
         }}
-
         .login-shell {{
             max-width: 100%;
             margin: 0 auto 1.5rem auto;
             text-align: center;
         }}
-
-        .login-title {{
-            font-size: 2.5rem;
-            font-weight: 900;
-            color: #FFFFFF;
-            margin-bottom: 0.1rem;
-            letter-spacing: -0.03em;
-            text-transform: uppercase;
-            text-shadow: 0 4px 12px rgba(0,0,0,0.6);
-        }}
-
-        .login-tagline {{
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #2ecc71; 
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }}
-
-        /* ===== Frosted Glass Login Card ===== */
         div[data-testid="stForm"] {{
             background: rgba(255, 255, 255, 0.12) !important; 
             backdrop-filter: blur(20px) saturate(160%) !important; 
@@ -177,41 +140,27 @@ if not st.session_state.logged_in:
             position: relative;
             z-index: 10;
         }}
-
         div[data-testid="stForm"] label {{
             color: #FFFFFF !important;
             font-weight: 700 !important;
             font-size: 0.85rem !important;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }}
-
         [data-testid="InputInstructions"] {{
             display: none !important;
         }}
-
-        /* FIXED COLOR: Text inputs and text fields now use dark slate font color for clean visibility */
         div[data-testid="stTextInput"] input,
         div[data-testid="stSelectbox"] [data-baseweb="select"] > div {{
             min-height: 46px;
             border-radius: 12px !important;
             border: 1px solid rgba(255, 255, 255, 0.25) !important;
-            background: #f8fafc !important; /* Changed back to soft light background for clean contrast */
-            color: #0f172a !important;       /* 🌟 FIXED: Font color forced to deep charcoal dark */
+            background: #f8fafc !important; 
+            color: #0f172a !important;       
         }}
-
-        /* Fixes visibility of placeholder text inside the white boxes */
         div[data-testid="stTextInput"] input::placeholder {{
             color: #64748b !important;
         }}
-
-        div[data-testid="stTextInput"] input:focus,
-        div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within {{
-            border: 2px solid #2ecc71 !important;
-            box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.2) !important;
-        }}
-
         div[data-testid="stFormSubmitButton"] button {{
             min-height: 46px;
             border-radius: 12px !important;
@@ -219,28 +168,22 @@ if not st.session_state.logged_in:
             font-weight: 700 !important;
             width: 100%;
         }}
-
         div[data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"] {{
             background: linear-gradient(90deg, #16A085 0%, #0F4C81 100%) !important;
             color: #FFFFFF !important;
             border: none !important;
-            box-shadow: 0 10px 20px rgba(22, 160, 133, 0.3) !important;
         }}
-
         div[data-testid="stFormSubmitButton"] button[kind="secondaryFormSubmit"] {{
             background: rgba(255, 255, 255, 0.2) !important;
             color: #FFFFFF !important;
             border: 1px solid rgba(255, 255, 255, 0.25) !important;
         }}
-
         .login-help {{
             text-align: center;
             color: #cbd5e1;
             font-size: 0.85rem;
             margin-top: 1.5rem;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.4);
         }}
-
         .login-help span {{
             color: #38bdf8;
             font-weight: 600;
@@ -251,40 +194,12 @@ if not st.session_state.logged_in:
     )
 
     left, center, right = st.columns([1, 1.8, 1])
-
     with center:
-        st.markdown(
-            """
-            <div class="login-shell"><br><br><br><br><br><br>
-                </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        # Sleek form layout with official collapsed label visibility
+        st.markdown('<div class="login-shell"><br><br><br><br><br><br></div>', unsafe_allow_html=True)
         with st.form(f"login_form_{st.session_state['form_version']}", clear_on_submit=False):
-            
-            # Giving them proper accessibility names, but hiding them from the UI completely
-            role = st.selectbox(
-                "Authorization Role", 
-                ["HR", "ADMIN"], 
-                index=0, 
-                key="login_role", 
-                label_visibility="collapsed"
-            )
-            username = st.text_input(
-                "Username", 
-                placeholder="Enter username", 
-                key="login_username", 
-                label_visibility="collapsed"
-            )
-            password = st.text_input(
-                "Password", 
-                type="password", 
-                placeholder="Enter password", 
-                key="login_password", 
-                label_visibility="collapsed"
-            )
+            role = st.selectbox("Authorization Role", ["HR", "ADMIN"], index=0, key="login_role", label_visibility="collapsed")
+            username = st.text_input("Username", placeholder="Enter username", key="login_username", label_visibility="collapsed")
+            password = st.text_input("Password", type="password", placeholder="Enter password", key="login_password", label_visibility="collapsed")
 
             c1, c2 = st.columns(2)
             with c1:
@@ -292,14 +207,7 @@ if not st.session_state.logged_in:
             with c2:
                 reset_btn = st.form_submit_button("Reset", use_container_width=True, type="secondary")
 
-        st.markdown(
-            """
-            <div class="login-help">
-                Authorized access only. <span>System logs active.</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div class="login-help">Authorized access only. <span>System logs active.</span></div>', unsafe_allow_html=True)
 
     if reset_btn:
         st.session_state["form_version"] += 1
@@ -322,15 +230,11 @@ if not st.session_state.logged_in:
             st.rerun()
         else:
             st.error("Invalid Username or Password")
-
     st.stop()
-# =========================================================
-# Login Page END*
-# =========================================================
-    
+
 
 # =========================================================
-# MAIN APP STYLING START*
+# MAIN APP GLOBAL APPLICATION CSS
 # =========================================================
 st.markdown(
     """
@@ -343,41 +247,13 @@ st.markdown(
         --muted: #6B7280;
         --text: #1F2933;
       }
-
       .stApp {
         background: var(--bg);
       }
-
       .block-container {
         padding-top: 1.5rem;
         padding-bottom: 3rem;
       }
-
-      h1, h2, h3 {
-        color: var(--text);
-      }
-
-      .brand-banner {
-        background: linear-gradient(120deg, #0F4C81 0%, #16A085 100%);
-        color: #fff;
-        padding: 24px 28px;
-        border-radius: 14px;
-        box-shadow: 0 6px 20px rgba(15, 76, 129, 0.15);
-        margin-bottom: 18px;
-      }
-
-      .brand-banner h1 {
-        color: #fff;
-        margin: 0;
-        font-size: 32px;
-      }
-
-      .brand-banner p {
-        color: #E6F3F0;
-        margin: 6px 0 0 0;
-        font-size: 14px;
-      }
-
       .metric-card {
         background: var(--card);
         border: 1px solid #E5E7EB;
@@ -385,7 +261,6 @@ st.markdown(
         padding: 14px 16px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
       }
-
       .verdict-pill {
         display:inline-block;
         padding: 4px 12px;
@@ -395,7 +270,6 @@ st.markdown(
         font-weight: 600;
         font-size: 12px;
       }
-
       .small-muted {
         color: var(--muted);
         font-size: 12px;
@@ -404,82 +278,138 @@ st.markdown(
       section[data-testid="stSidebar"] {
         background-color: #0F4C81 !important;
       }
-
       section[data-testid="stSidebar"] h3,
       section[data-testid="stSidebar"] p,
       section[data-testid="stSidebar"] label,
       section[data-testid="stSidebar"] span [data-testid="stMarkdownContainer"] {
-        color: #00BFFF !important;
+        color: #38bdf8 !important;
       }
-#----------------Button config in sidebar------------------------------------------------------
 
-      /* 1. This keeps all STANDARD buttons looking exactly as they do now */
+      /* =========================================================
+         GLASSMORPHISM USER PROFILE CARD STYLES
+         ========================================================= */
+      .glass-profile-card {
+        background: rgba(255, 255, 255, 0.06) !important;
+        backdrop-filter: blur(20px) saturate(140%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 20px !important;
+        padding: 18px !important;
+        margin-top: 25px !important;
+        margin-bottom: 5px !important;
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3) !important;
+      }
+      .glass-profile-layout {
+        display: flex !important;
+        align-items: center !important;
+        gap: 14px !important;
+      }
+      .glass-avatar-frame {
+        width: 46px !important;
+        height: 46px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #38bdf8 0%, #16a085 100%) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.35rem !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+      }
+      .glass-meta-details {
+        flex: 1 !important;
+      }
+      .glass-user-title {
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        margin: 0 !important;
+        line-height: 1.2 !important;
+      }
+      .glass-user-badge {
+        display: inline-block !important;
+        background: rgba(56, 189, 248, 0.15) !important;
+        color: #38bdf8 !important;
+        font-size: 0.65rem !important;
+        font-weight: 800 !important;
+        padding: 2px 6px !important;
+        border-radius: 6px !important;
+        text-transform: uppercase !important;
+        margin-left: 6px !important;
+        letter-spacing: 0.05em !important;
+        border: 1px solid rgba(56, 189, 248, 0.2) !important;
+      }
+      .glass-user-subtext {
+        font-size: 0.78rem !important;
+        color: rgba(255, 255, 255, 0.65) !important;
+        margin: 4px 0 0 0 !important;
+      }
+      .glass-session-timestamp {
+        font-size: 0.72rem !important;
+        color: rgba(255, 255, 255, 0.45) !important;
+        font-family: monospace !important;
+        margin-top: 12px !important;
+        padding-top: 10px !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+        text-align: center !important;
+      }
+
+      /* Sidebar Controls Buttons Customization */
       section[data-testid="stSidebar"] div.stButton > button {
         background-color: #BAE6FD !important;
         color: #000000 !important;            
         border: none;
         font-weight: 600;
+        border-radius: 10px !important;
       }
-
       section[data-testid="stSidebar"] div.stButton > button:hover {
         background-color: #7DD3FC !important;
-        color: #000000 !important;
       }
-
-      /* 2. This targets ONLY your Primary button (the LogOut button) */
+      /* Red accent rule specifically targets the custom primary logout selector block */
       section[data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-primary"] {
-        background-color: #BAE6FD !important; /* Keeps the same light blue background */
-        color: #000000 !important;            /* Changes the font color to bright red! */
-        border: none;
-        font-weight: 700;                     /* Slightly bolder to stand out */
+        background-color: rgba(239, 68, 68, 0.15) !important; 
+        color: #ef4444 !important;            
+        border: 1px solid rgba(239, 68, 68, 0.25) !important;
+        font-weight: 700;                     
+        margin-top: 6px !important;
       }
-
       section[data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-primary"]:hover {
-        background-color: #7DD3FC !important; /* Keeps the same hover background color */
-        color: #FF0000 !important;            /* Font stays bright red on hover */
+        background-color: #ef4444 !important; 
+        color: #ffffff !important;            
       }
-      
       section[data-testid="stSidebar"] hr {
         border: none;
-        border-top: 3px solid rgba(57, 255, 20, 0.45);
-        box-shadow: 0 0 6px rgba(57, 255, 20, 0.5);
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        margin: 16px 0;
       }
+      /* Neon Green Glow for Separators */
+    section[data-testid="stSidebar"] hr {
+    height: 1px !important;
+    border: none !important;
+    background: #16a085 !important; /* Neon Green base */
+    box-shadow: 0 0 8px 2px #16a085, 0 0 15px 4px rgba(22, 160, 133, 0.5) !important;
+    margin: 20px 0 !important;
+}
     </style>
     """,
     unsafe_allow_html=True,
 )
-# =========================================================
-# MAIN APP STYLING END*
-# =========================================================
 
 # =========================================================
-# SIDEBAR START*
+# SIDEBAR NAVIGATION & ACCOUNT ARCHITECTURE
 # =========================================================
 with st.sidebar:
     st.markdown(
         """
-        <div style="margin-bottom: 12px;">
-            <div style="color: #38bdf8; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">
-                🌟 VisionBoard
-            </div>
-            <div style="color: #94a3b8; font-size: 0.82rem; font-weight: 500; margin-top: 2px;">
-                Enterprise Talent Analytics Platform
-            </div>
+        <div style="margin-bottom: 12px; padding-top: 10px;">
+            <div style="color: #38bdf8; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">🌟 VisionBoard</div>
+            <div style="color: #94a3b8; font-size: 0.82rem; font-weight: 500; margin-top: 2px;">Enterprise Talent Analytics Platform</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(
-        f'<p style="color:#c084fc; margin:0;">Logged in as: <strong style="color:#f8fafc;">{st.session_state.role}</strong></p>',
-        unsafe_allow_html=True,
-    )
     st.markdown("---")
 
-    mode = st.radio(
-        "Choose Mode",
-        ["Single Audit", "Bulk Audit", "Compare Candidates"],
-        index=0,
-    )
+    mode = st.radio("Choose Mode", ["Single Audit", "Bulk Audit", "Compare Candidates"], index=0)
     st.markdown("---")
 
     key_ok = bool(os.environ.get("OPENAI_API_KEY")) and not os.environ.get("OPENAI_API_KEY", "").startswith("sk-your")
@@ -488,24 +418,50 @@ with st.sidebar:
     else:
         st.error("OPENAI_API_KEY missing in .env")
         
-    st.markdown(
-        f'<p style="color:#1E293B; margin:0;">Powered by: <strong style="color:#f8fafc;">{os.environ.get("OPENAI_MODEL", "gpt-4o-mini")}</strong></p>',
-        unsafe_allow_html=True,
-    )
-   
+    st.markdown(f'<p style="color:#94a3b8; font-size:0.82rem; margin:0;">Engine: <strong style="color:#f8fafc;">{os.environ.get("OPENAI_MODEL", "gpt-4o-mini")}</strong></p>', unsafe_allow_html=True)
     st.markdown("---")
     st.caption("💡 Add a Job Description to enhance match scoring.")
     
-    # ----------------------Initialize a logout confirmation state flag if it doesn't exist--- functio() @line 50
-    
-    # Clean modal trigger button placed back in its original position
-    if st.button("🔓 Logout", use_container_width=True, type="primary", key="sidebar_logout_trigger"):
-        show_logout_dialog()
-# =========================================================
-# SIDEBAR END*
-# =========================================================
+    #if st.button("🔄 Reset Audit Counters", use_container_width=True):
+    #    st.session_state["counter_reset_offset"] = (1 if "single_audit" in st.session_state else 0) + len(st.session_state.get("bulk_audits", []))
+    #    st.rerun()
 
-# Helper function to safely read the logo image
+    # Layout buffer to lock the card elegantly at the sidebar footer
+    st.markdown("<br>" * 2, unsafe_allow_html=True)
+    
+    # ---------------- DYNAMIC METADATA BAR BLOCK ----------------
+ #   now = datetime.now()
+ #   date_part = now.strftime("%b %d, %Y")
+ #   time_part = now.strftime("%I:%M %p")
+ #   current_time_str = f"📅 {date_part}  |  ⏰ {time_part}"
+
+    # Crystalline Glass Container displaying active login privileges
+ #   st.markdown(
+ #       f"""
+ #       <div class="glass-profile-card">
+ #           <div class="glass-profile-layout">
+ #               <div class="glass-avatar-frame">👤</div>
+  #              <div class="glass-meta-details">
+  #                  <p class="glass-user-title">{st.session_state.role} User <span class="glass-user-badge">PRO</span></p>
+   #                 <p class="glass-user-subtext">Secure Session Console</p>
+   #             </div>
+  #          </div>
+  #          <div class="glass-session-timestamp">
+   #             {current_time_str}
+    #       </div>
+  #      </div>
+   #     """,
+   #     unsafe_allow_html=True
+   # )
+       
+    # ---------------- DYNAMIC METADATA BAR BLOCK END   ----------------
+    
+    #if st.button("🚪 Logout of Session", use_container_width=True, type="primary", key="sidebar_logout_trigger"):
+    #    show_logout_dialog()
+
+# =========================================================
+# MAIN APP BODY CONTENT
+# =========================================================
 def get_base64_image(image_path):
     try:
         if image_path and os.path.exists(image_path):
@@ -517,32 +473,82 @@ def get_base64_image(image_path):
 
 logo_base64 = get_base64_image(LOGO_PATH)
 
-BANNER_HTML = """<div style="display:flex; align-items:center; gap:24px; padding:18px 22px; border-radius:16px; background:linear-gradient(135deg, #0F4C81 0%, #16A085 100%); box-shadow:0 6px 20px rgba(15, 76, 129, 0.18); margin-bottom:20px;">
-    <img src="data:image/png;base64,{{LOGO_BASE64}}" width="140" style="object-fit:contain;">
-    <div>
-        <h1 style="margin:0; color:white; font-size:2.2rem; font-weight:700; line-height:1.2;">{{ORG_NAME}} | Resume Audit Agent</h1>
-        <p style="margin-top:6px; color:#D1D5DB; font-size:1rem;">{{ORG_TAGLINE}}</p>
+col_spacer, col_logout = st.columns([9, 1])
+
+with col_logout:
+    if st.button(
+        "Sign Out",
+        key="top_logout",
+        help="Logout",
+        use_container_width=True
+    ):
+        show_logout_dialog()
+
+now = datetime.now()
+date_part = now.strftime("%b %d, %Y")
+time_part = now.strftime("%I:%M %p")
+
+# Use an f-string for cleaner, more reliable HTML rendering
+# This avoids the .replace() issues and potential syntax errors
+BANNER_HTML = f"""
+<div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:22px 28px;
+    border-radius:18px;
+    background:linear-gradient(135deg,#0F4C81 0%,#16A085 100%);
+    box-shadow:0 12px 32px rgba(15,76,129,.18);
+    margin-bottom:22px;
+">
+    <div style="display:flex;align-items:center;gap:22px;">
+        <img src="data:image/png;base64,{logo_base64}" width="120" style="border-radius:8px; background:white; padding:4px;">
+        <div>
+            <h1 style="margin:0; color:white; font-size:2rem; font-weight:700; line-height:1.1;">
+                {ORG_NAME} | Resume Audit Agent
+            </h1>
+            <div style="margin-top:8px; color:rgba(255,255,255,.85); font-size:.95rem;">
+                {ORG_TAGLINE}
+            </div>
+        </div>
     </div>
-</div>"""
+    <div style="min-width:270px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(18px); border-radius:16px; padding:14px 18px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#38BDF8,#14B8A6); display:flex; align-items:center; justify-content:center; font-size:22px;">👤</div>
+            <div>
+                <div style="color:white; font-size:16px; font-weight:700;">{st.session_state.role} User</div>
+                <div style="color:rgba(255,255,255,.70); font-size:12px;">Secure Session Active</div>
+            </div>
+        </div>
+        <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.65); font-size:11px;">
+            📅 {date_part} &nbsp;&nbsp;|&nbsp;&nbsp; ⏰ {time_part}
+        </div>
+    </div>
+</div>
+"""
 
-rendered_banner = (
-    BANNER_HTML
-    .replace("{{LOGO_BASE64}}", logo_base64)
-    .replace("{{ORG_NAME}}", ORG_NAME)
-    .replace("{{ORG_TAGLINE}}", ORG_TAGLINE)
-)
-st.markdown(rendered_banner, unsafe_allow_html=True)
+st.markdown(BANNER_HTML, unsafe_allow_html=True)
 
-# ---------------- Helpers ----------------
+#rendered_banner = (
+ #   BANNER_HTML
+  #  .replace("{{LOGO_BASE64}}", logo_base64)
+   # .replace("{{ORG_NAME}}", ORG_NAME)
+   # .replace("{{ORG_TAGLINE}}", ORG_TAGLINE)
+   # .replace("{{ROLE}}", st.session_state.role)
+   # .replace("{{DATE}}", date_part)
+   # .replace("{{TIME}}", time_part)
+#)
+
+#st.markdown(rendered_banner, unsafe_allow_html=True)
+
+# ---------------- UI Shared Reusables ----------------
 def jd_input(key: str, version: int) -> str:
     with st.expander("📌 Job Description (optional, recommended)", expanded=False):
         col1, col2 = st.columns([2, 1])
         with col1:
-            jd_text = st.text_area("Paste JD text", key=f"jd_text_{key}_{version}", height=180,
-                                   placeholder="Paste the job description here for JD-match scoring…")
+            jd_text = st.text_area("Paste JD text", key=f"jd_text_{key}_{version}", height=180, placeholder="Paste the job description here for JD-match scoring…")
         with col2:
-            jd_file = st.file_uploader("…or upload a JD file", type=["pdf", "docx", "txt"],
-                                       key=f"jd_file_{key}_{version}")
+            jd_file = st.file_uploader("…or upload a JD file", type=["pdf", "docx", "txt"], key=f"jd_file_{key}_{version}")
             if jd_file is not None:
                 try:
                     jd_text = extract_text(jd_file.name, jd_file.getvalue())
@@ -550,7 +556,6 @@ def jd_input(key: str, version: int) -> str:
                 except Exception as e:
                     st.error(f"JD parse error: {e}")
         return jd_text.strip() if jd_text else ""
-
 
 def metric_grid(audit: dict):
     cols = st.columns(5)
@@ -572,7 +577,6 @@ def metric_grid(audit: dict):
             """,
             unsafe_allow_html=True,
         )
-
 
 def render_audit_view(audit: dict, key_prefix: str = "k"):
     name = audit.get("candidate_name", "Candidate")
@@ -605,8 +609,7 @@ def render_audit_view(audit: dict, key_prefix: str = "k"):
 
     c1, c2 = st.columns(2)
     with c1:
-        st.plotly_chart(charts.gauge(audit.get("overall_score", 0), "Overall Score"),
-                        use_container_width=True, key=f"{key_prefix}_gauge")
+        st.plotly_chart(charts.gauge(audit.get("overall_score", 0), "Overall Score"), use_container_width=True, key=f"{key_prefix}_gauge")
     with c2:
         st.plotly_chart(
             charts.radar({
@@ -653,7 +656,6 @@ def render_audit_view(audit: dict, key_prefix: str = "k"):
         for s in audit.get("recommendations") or []:
             st.markdown(f"- {s}")
 
-
 def build_single_pdf_bytes(audit: dict, format_check=None) -> bytes:
     skills = audit.get("skills") or {}
     pngs = {
@@ -679,8 +681,7 @@ if mode == "Single Audit":
     v = st.session_state["single_version"]
     jd = jd_input("single", v)
     
-    file = st.file_uploader("Upload a resume (PDF / DOCX / TXT)",
-                            type=["pdf", "docx", "txt"], key=f"single_file_{v}")
+    file = st.file_uploader("Upload a resume (PDF / DOCX / TXT)", type=["pdf", "docx", "txt"], key=f"single_file_{v}")
     
     c1, c2 = st.columns([1.5, 8.5])
     with c1:
@@ -701,10 +702,7 @@ if mode == "Single Audit":
             else:
                 with st.spinner("Auditing with GPT-4o-mini…"):
                     audit = audit_resume(text, jd or None)
-                fc = build_format_checklist(
-                    file.name, file.getvalue(), text,
-                    float(audit.get("total_experience_years") or 0),
-                )
+                fc = build_format_checklist(file.name, file.getvalue(), text, float(audit.get("total_experience_years") or 0))
                 audit["_format_check"] = fc
                 audit["_filename"] = file.name
                 st.session_state["single_audit"] = audit
@@ -731,12 +729,7 @@ if mode == "Single Audit":
             except Exception as e:
                 st.error(f"PDF render error: {e}")
         with col2:
-            st.download_button(
-                "📥 Download JSON",
-                data=json.dumps(audit, indent=2),
-                file_name="audit.json", mime="application/json",
-                use_container_width=True,
-            )
+            st.download_button("📥 Download JSON", data=json.dumps(audit, indent=2), file_name="audit.json", mime="application/json", use_container_width=True)
 
 
 # ---------------- MODE: Bulk Audit ----------------
@@ -745,10 +738,7 @@ elif mode == "Bulk Audit":
     v = st.session_state["bulk_version"]
     jd = jd_input("bulk", v)
     
-    files = st.file_uploader(
-        "Upload multiple resumes (PDF / DOCX / TXT)",
-        type=["pdf", "docx", "txt"], accept_multiple_files=True, key=f"bulk_files_{v}",
-    )
+    files = st.file_uploader("Upload multiple resumes (PDF / DOCX / TXT)", type=["pdf", "docx", "txt"], accept_multiple_files=True, key=f"bulk_files_{v}")
     
     c1, c2 = st.columns([1.8, 8.2])
     with c1:
@@ -773,10 +763,7 @@ elif mode == "Bulk Audit":
                 else:
                     a = audit_resume(txt, jd or None)
                     a["_filename"] = f.name
-                    a["_format_check"] = build_format_checklist(
-                        f.name, f.getvalue(), txt,
-                        float(a.get("total_experience_years") or 0),
-                    )
+                    a["_format_check"] = build_format_checklist(f.name, f.getvalue(), txt, float(a.get("total_experience_years") or 0))
                     audits.append(a)
             except Exception as e:
                 st.error(f"{f.name}: {e}")
@@ -806,11 +793,9 @@ elif mode == "Bulk Audit":
         st.markdown("###  ")
         col1, col2 = st.columns(2)
         with col1:
-            st.plotly_chart(charts.horizontal_ranking(df, "Candidate Ranking"),
-                            use_container_width=True, key="bulk_rank")
+            st.plotly_chart(charts.horizontal_ranking(df, "Candidate Ranking"), use_container_width=True, key="bulk_rank")
         with col2:
-            st.plotly_chart(charts.bulk_histogram(df["overall_score"].tolist(), "Score Distribution"),
-                            use_container_width=True, key="bulk_hist")
+            st.plotly_chart(charts.bulk_histogram(df["overall_score"].tolist(), "Score Distribution"), use_container_width=True, key="bulk_hist")
 
         st.plotly_chart(charts.bar_compare(df, "Side-by-side Metrics"), use_container_width=True, key="bulk_bar")
 
@@ -823,10 +808,6 @@ elif mode == "Bulk Audit":
                 render_audit_view(a, key_prefix=f"bulk_{idx}")
 
         st.markdown("---")
-        
-        # ---------------------------------------------------------------------
-        # MODIFIED: Dynamically parse multi-file PDF output packets
-        # ---------------------------------------------------------------------
         col1, col2 = st.columns(2)
         with col1:
             try:
@@ -834,14 +815,8 @@ elif mode == "Bulk Audit":
                     "ranking": charts.fig_to_png_bytes(charts.horizontal_ranking(df), width=900, height=max(360, 60*len(df))),
                     "histogram": charts.fig_to_png_bytes(charts.bulk_histogram(df["overall_score"].tolist()), width=900, height=340),
                 }
+                reports_dictionary = pdf_report.build_bulk_pdf(audits, pngs, format_checks=[a.get("_format_check") for a in audits])
                 
-                # Execution returns dictionary containing individual files instead of a single joint file
-                reports_dictionary = pdf_report.build_bulk_pdf(
-                    audits, pngs,
-                    format_checks=[a.get("_format_check") for a in audits],
-                )
-                
-                # A. Render Master Summary Overview File Download Option
                 st.download_button(
                     "📊 Download Bulk Overview Summary Report",
                     data=reports_dictionary["SUMMARY_OVERVIEW"],
@@ -850,12 +825,10 @@ elif mode == "Bulk Audit":
                     use_container_width=True,
                 )
                 
-                # B. Render separate independent files dropdown matrix
                 st.markdown("#### 📥 Download Individual Candidate Reports")
                 for candidate_key, pdf_data in reports_dictionary.items():
                     if candidate_key == "SUMMARY_OVERVIEW":
                         continue
-                    
                     readable_candidate_name = candidate_key.replace("_", " ")
                     st.download_button(
                         label=f"📄 Download Report — {readable_candidate_name}",
@@ -869,12 +842,7 @@ elif mode == "Bulk Audit":
         with col2:
             csv_buf = io.StringIO()
             df.to_csv(csv_buf, index=False)
-            st.download_button(
-                "📥 Download CSV Summary",
-                data=csv_buf.getvalue(),
-                file_name="bulk_audit_summary.csv", mime="text/csv",
-                use_container_width=True,
-            )
+            st.download_button("📥 Download CSV Summary", data=csv_buf.getvalue(), file_name="bulk_audit_summary.csv", mime="text/csv", use_container_width=True)
 
 
 # ---------------- MODE: Compare Candidates ----------------
@@ -883,10 +851,7 @@ else:
     v = st.session_state["compare_version"]
     jd = jd_input("compare", v)
     
-    files = st.file_uploader(
-        "Upload 2–6 resumes to compare",
-        type=["pdf", "docx", "txt"], accept_multiple_files=True, key=f"compare_files_{v}",
-    )
+    files = st.file_uploader("Upload 2–6 resumes to compare", type=["pdf", "docx", "txt"], accept_multiple_files=True, key=f"compare_files_{v}")
     
     can_run = files is not None and 2 <= len(files) <= 6
     if files and not can_run:
@@ -943,11 +908,9 @@ else:
 
         col1, col2 = st.columns(2)
         with col1:
-            st.plotly_chart(charts.bar_compare(df, "Metric Comparison"),
-                            use_container_width=True, key="cmp_bar")
+            st.plotly_chart(charts.bar_compare(df, "Metric Comparison"), use_container_width=True, key="cmp_bar")
         with col2:
-            st.plotly_chart(charts.horizontal_ranking(df, "Ranking"),
-                            use_container_width=True, key="cmp_rank")
+            st.plotly_chart(charts.horizontal_ranking(df, "Ranking"), use_container_width=True, key="cmp_rank")
 
         st.markdown("### 📋 Ranking Table")
         st.dataframe(df, use_container_width=True, hide_index=True)
