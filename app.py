@@ -5,7 +5,9 @@ import base64
 import os
 import io
 import json
+
 from datetime import datetime
+import pytz
 
 import pandas as pd
 import streamlit as st
@@ -30,6 +32,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+ist = pytz.timezone('Asia/Kolkata')
+
+# Get the current time in IST
+now_ist = datetime.now(ist)
+
+# Format it as needed
+date_part = now_ist.strftime("%b %d, %Y")
+time_part = now_ist.strftime("%I:%M %p")
 
 # =========================================================
 # Hide Streamlit Header (Deploy Button & Menu)
