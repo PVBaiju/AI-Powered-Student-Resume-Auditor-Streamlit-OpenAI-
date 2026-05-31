@@ -479,7 +479,7 @@ with col_logout:
     if st.button(
         "Sign Out",
         key="top_logout",
-        help="Logout",
+        help="Signing Out of the platform",
         use_container_width=True
     ):
         show_logout_dialog()
