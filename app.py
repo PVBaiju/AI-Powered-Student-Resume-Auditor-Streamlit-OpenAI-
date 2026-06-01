@@ -494,50 +494,60 @@ with col_logout:
     ):
         show_logout_dialog()
 
-now = datetime.now()
-date_part = now.strftime("%b %d, %Y")
-time_part = now.strftime("%I:%M %p")
+#  REPLACE WITH THIS NEW AUTO-REFRESH BLOCK:
 
-# Use an f-string for cleaner, more reliable HTML rendering
-# This avoids the .replace() issues and potential syntax errors
-BANNER_HTML = f"""
-<div style="
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:22px 28px;
-    border-radius:18px;
-    background:linear-gradient(135deg,#0F4C81 0%,#16A085 100%);
-    box-shadow:0 12px 32px rgba(15,76,129,.18);
-    margin-bottom:22px;
-">
-    <div style="display:flex;align-items:center;gap:22px;">
-        <img src="data:image/png;base64,{logo_base64}" width="120" style="border-radius:8px; background:white; padding:4px;">
-        <div>
-            <h1 style="margin:0; color:white; font-size:2rem; font-weight:700; line-height:1.1;">
-                {ORG_NAME} | Resume Audit Agent
-            </h1>
-            <div style="margin-top:8px; color:rgba(255,255,255,.85); font-size:.95rem;">
-                {ORG_TAGLINE}
-            </div>
-        </div>
-    </div>
-    <div style="min-width:270px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(18px); border-radius:16px; padding:14px 18px;">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#38BDF8,#14B8A6); display:flex; align-items:center; justify-content:center; font-size:22px;">👤</div>
+# Create an isolated fragment that auto-refreshes every 10 seconds
+@st.fragment(run_every="10s")
+def render_live_banner(logo_b64_data):
+    # Calculate fresh India Standard Time (IST) on every interval
+    ist_zone = pytz.timezone('Asia/Kolkata')
+    live_now = datetime.now(ist_zone)
+    
+    live_date = live_now.strftime("%b %d, %Y")
+    live_time = live_now.strftime("%I:%M %p")
+    
+    # Generate the banner layout dynamically
+    banner_blueprint = f"""
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:22px 28px;
+        border-radius:18px;
+        background:linear-gradient(135deg,#0F4C81 0%,#16A085 100%);
+        box-shadow:0 12px 32px rgba(15,76,129,.18);
+        margin-bottom:22px;
+    ">
+        <div style="display:flex;align-items:center;gap:22px;">
+            <img src="data:image/png;base64,{logo_b64_data}" width="120" style="border-radius:8px; background:white; padding:4px;">
             <div>
-                <div style="color:white; font-size:16px; font-weight:700;">{st.session_state.role} User</div>
-                <div style="color:rgba(255,255,255,.70); font-size:12px;">Secure Session Active</div>
+                <h1 style="margin:0; color:white; font-size:2rem; font-weight:700; line-height:1.1;">
+                    {ORG_NAME} | Resume Audit Agent
+                </h1>
+                <div style="margin-top:8px; color:rgba(255,255,255,.85); font-size:.95rem;">
+                    {ORG_TAGLINE}
+                </div>
             </div>
         </div>
-        <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.65); font-size:11px;">
-            📅 {date_part} &nbsp;&nbsp;|&nbsp;&nbsp; ⏰ {time_part}
+        <div style="min-width:270px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(18px); border-radius:16px; padding:14px 18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#38BDF8,#14B8A6); display:flex; align-items:center; justify-content:center; font-size:22px;">👤</div>
+                <div>
+                    <div style="color:white; font-size:16px; font-weight:700;">{st.session_state.role} User</div>
+                    <div style="color:rgba(255,255,255,.70); font-size:12px;">Secure Session Active</div>
+                </div>
+            </div>
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.65); font-size:11px;">
+                📅 {live_date} &nbsp;&nbsp;|&nbsp;&nbsp; ⏰ {live_time}
+            </div>
         </div>
     </div>
-</div>
-"""
+    """
+    st.markdown(banner_blueprint, unsafe_allow_html=True)
 
-st.markdown(BANNER_HTML, unsafe_allow_html=True)
+# Call the fragment function to render the banner layout on screen
+render_live_banner(logo_base64)
+
 
 #rendered_banner = (
  #   BANNER_HTML
