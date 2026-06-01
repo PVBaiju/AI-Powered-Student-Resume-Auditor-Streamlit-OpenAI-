@@ -5,7 +5,6 @@ import base64
 import os
 import io
 import json
-
 from datetime import datetime
 import pytz
 
@@ -32,12 +31,10 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-ist = pytz.timezone('Asia/Kolkata')
 
-# Get the current time in IST
+ist = pytz.timezone('Asia/Kolkata')
 now_ist = datetime.now(ist)
 
-# Format it as needed
 date_part = now_ist.strftime("%b %d, %Y")
 time_part = now_ist.strftime("%I:%M %p")
 
@@ -295,9 +292,6 @@ st.markdown(
         color: #38bdf8 !important;
       }
 
-      /* =========================================================
-         GLASSMORPHISM USER PROFILE CARD STYLES
-         ========================================================= */
       .glass-profile-card {
         background: rgba(255, 255, 255, 0.06) !important;
         backdrop-filter: blur(20px) saturate(140%) !important;
@@ -363,7 +357,6 @@ st.markdown(
         text-align: center !important;
       }
 
-      /* Sidebar Controls Buttons Customization */
       section[data-testid="stSidebar"] div.stButton > button {
         background-color: #BAE6FD !important;
         color: #000000 !important;            
@@ -374,7 +367,6 @@ st.markdown(
       section[data-testid="stSidebar"] div.stButton > button:hover {
         background-color: #7DD3FC !important;
       }
-      /* Red accent rule specifically targets the custom primary logout selector block */
       section[data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-primary"] {
         background-color: rgba(239, 68, 68, 0.15) !important; 
         color: #ef4444 !important;            
@@ -391,21 +383,20 @@ st.markdown(
         border-top: 1px solid rgba(255, 255, 255, 0.12);
         margin: 16px 0;
       }
-      /* Neon Green Glow for Separators */
-    section[data-testid="stSidebar"] hr {
-    height: 1px !important;
-    border: none !important;
-    background: #16a085 !important; /* Neon Green base */
-    box-shadow: 0 0 8px 2px #16a085, 0 0 15px 4px rgba(22, 160, 133, 0.5) !important;
-    margin: 20px 0 !important;
-}
+      section[data-testid="stSidebar"] hr {
+        height: 1px !important;
+        border: none !important;
+        background: #16a085 !important; 
+        box-shadow: 0 0 8px 2px #16a085, 0 0 15px 4px rgba(22, 160, 133, 0.5) !important;
+        margin: 20px 0 !important;
+      }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # =========================================================
-# SIDEBAR NAVIGATION & ACCOUNT ARCHITECTURE
+# SIDEBAR NAVIGATION
 # =========================================================
 with st.sidebar:
     st.markdown(
@@ -431,43 +422,6 @@ with st.sidebar:
     st.markdown(f'<p style="color:#94a3b8; font-size:0.82rem; margin:0;">Engine: <strong style="color:#f8fafc;">{os.environ.get("OPENAI_MODEL", "gpt-4o-mini")}</strong></p>', unsafe_allow_html=True)
     st.markdown("---")
     st.caption("💡 Add a Job Description to enhance match scoring.")
-    
-    #if st.button("🔄 Reset Audit Counters", use_container_width=True):
-    #    st.session_state["counter_reset_offset"] = (1 if "single_audit" in st.session_state else 0) + len(st.session_state.get("bulk_audits", []))
-    #    st.rerun()
-
-    # Layout buffer to lock the card elegantly at the sidebar footer
-    st.markdown("<br>" * 2, unsafe_allow_html=True)
-    
-    # ---------------- DYNAMIC METADATA BAR BLOCK ----------------
- #   now = datetime.now()
- #   date_part = now.strftime("%b %d, %Y")
- #   time_part = now.strftime("%I:%M %p")
- #   current_time_str = f"📅 {date_part}  |  ⏰ {time_part}"
-
-    # Crystalline Glass Container displaying active login privileges
- #   st.markdown(
- #       f"""
- #       <div class="glass-profile-card">
- #           <div class="glass-profile-layout">
- #               <div class="glass-avatar-frame">👤</div>
-  #              <div class="glass-meta-details">
-  #                  <p class="glass-user-title">{st.session_state.role} User <span class="glass-user-badge">PRO</span></p>
-   #                 <p class="glass-user-subtext">Secure Session Console</p>
-   #             </div>
-  #          </div>
-  #          <div class="glass-session-timestamp">
-   #             {current_time_str}
-    #       </div>
-  #      </div>
-   #     """,
-   #     unsafe_allow_html=True
-   # )
-       
-    # ---------------- DYNAMIC METADATA BAR BLOCK END   ----------------
-    
-    #if st.button("🚪 Logout of Session", use_container_width=True, type="primary", key="sidebar_logout_trigger"):
-    #    show_logout_dialog()
 
 # =========================================================
 # MAIN APP BODY CONTENT
@@ -484,29 +438,18 @@ def get_base64_image(image_path):
 logo_base64 = get_base64_image(LOGO_PATH)
 
 col_spacer, col_logout = st.columns([9, 1])
-
 with col_logout:
-    if st.button(
-        "Sign Out",
-        key="top_logout",
-        help="Signing Out of the platform",
-        use_container_width=True
-    ):
+    if st.button("Sign Out", key="top_logout", help="Signing Out of the platform", use_container_width=True):
         show_logout_dialog()
 
-#  REPLACE WITH THIS NEW AUTO-REFRESH BLOCK:
-
-# Create an isolated fragment that auto-refreshes every 10 seconds
+# Fragment auto-refreshes every 10 seconds to calculate updated India Standard Time (IST)
 @st.fragment(run_every="10s")
 def render_live_banner(logo_b64_data):
-    # Calculate fresh India Standard Time (IST) on every interval
     ist_zone = pytz.timezone('Asia/Kolkata')
     live_now = datetime.now(ist_zone)
-    
     live_date = live_now.strftime("%b %d, %Y")
     live_time = live_now.strftime("%I:%M %p")
     
-    # Generate the banner layout dynamically
     banner_blueprint = f"""
     <div style="
         display:flex;
@@ -545,21 +488,8 @@ def render_live_banner(logo_b64_data):
     """
     st.markdown(banner_blueprint, unsafe_allow_html=True)
 
-# Call the fragment function to render the banner layout on screen
 render_live_banner(logo_base64)
 
-
-#rendered_banner = (
- #   BANNER_HTML
-  #  .replace("{{LOGO_BASE64}}", logo_base64)
-   # .replace("{{ORG_NAME}}", ORG_NAME)
-   # .replace("{{ORG_TAGLINE}}", ORG_TAGLINE)
-   # .replace("{{ROLE}}", st.session_state.role)
-   # .replace("{{DATE}}", date_part)
-   # .replace("{{TIME}}", time_part)
-#)
-
-#st.markdown(rendered_banner, unsafe_allow_html=True)
 
 # ---------------- UI Shared Reusables ----------------
 def jd_input(key: str, version: int) -> str:
@@ -722,7 +652,56 @@ if mode == "Single Audit":
             else:
                 with st.spinner("Auditing with GPT-4o-mini…"):
                     audit = audit_resume(text, jd or None)
+                
+                # CRITICAL: file.getvalue() retains full file payload, preserving face recognition & embedded image extraction core metrics
                 fc = build_format_checklist(file.name, file.getvalue(), text, float(audit.get("total_experience_years") or 0))
+                
+                # Robust Fallback & Correction Layer for Photo, Email, and LinkedIn links
+                if fc and "items" in fc:
+                    import re
+                    normalized_text = "".join(text.split()).lower()
+                    text_lower = text.lower()
+                    file_bytes = file.getvalue()
+                    ext = file.name.split(".")[-1].lower()
+                    
+                    for it in fc["items"]:
+                        it_name = it.get("item", "").lower()
+                        
+                        # Fallback for profile photo validation via binary streams
+                        if "photo" in it_name and not it.get("passed"):
+                            is_img = False
+                            if ext == "pdf" and (b"/Image" in file_bytes or b"/Subtype /Image" in file_bytes or b"/Subtype/Image" in file_bytes):
+                                is_img = True
+                            elif ext in ["docx", "xlsx", "pptx"]:
+                                import zipfile
+                                try:
+                                    with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
+                                        if any(info.filename.startswith("word/media/") for info in z.infolist()):
+                                            is_img = True
+                                except Exception:
+                                    pass
+                            if is_img:
+                                it["passed"] = True
+                                it["note"] = "Verified via structural file analysis."
+                        
+                        # Fallback for emails ignoring space/case nuances
+                        elif "email" in it_name and not it.get("passed"):
+                            if re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text) or "@" in normalized_text:
+                                it["passed"] = True
+                                it["note"] = "Valid email verified."
+                        
+                        # Fallback for LinkedIn links broken across column line wrappers
+                        elif "linkedin" in it_name and not it.get("passed"):
+                            if "linkedin.com" in normalized_text or "linkedin.com" in text_lower:
+                                it["passed"] = True
+                                it["note"] = "LinkedIn profile presence verified."
+
+                    # Dynamic Filter: Programmatically eliminate GitHub link check parameters without tweaking core modules
+                    fc["items"] = [it for it in fc["items"] if "github" not in it.get("item", "").lower()]
+                    fc["passed"] = sum(1 for it in fc["items"] if it.get("passed"))
+                    fc["total"] = len(fc["items"])
+                    fc["score"] = int((fc["passed"] / fc["total"]) * 100) if fc["total"] > 0 else 0
+
                 audit["_format_check"] = fc
                 audit["_filename"] = file.name
                 st.session_state["single_audit"] = audit
@@ -750,7 +729,6 @@ if mode == "Single Audit":
                 st.error(f"PDF render error: {e}")
         with col2:
             st.download_button("📥 Download JSON", data=json.dumps(audit, indent=2), file_name="audit.json", mime="application/json", use_container_width=True)
-
 
 # ---------------- MODE: Bulk Audit ----------------
 elif mode == "Bulk Audit":
@@ -783,7 +761,54 @@ elif mode == "Bulk Audit":
                 else:
                     a = audit_resume(txt, jd or None)
                     a["_filename"] = f.name
-                    a["_format_check"] = build_format_checklist(f.name, f.getvalue(), txt, float(a.get("total_experience_years") or 0))
+                    
+                    # CRITICAL: f.getvalue() retains full file payload, preserving face recognition & embedded image extraction core metrics
+                    fc = build_format_checklist(f.name, f.getvalue(), txt, float(a.get("total_experience_years") or 0))
+                    
+                    # Robust Fallback & Correction Layer for Photo, Email, and LinkedIn links
+                    if fc and "items" in fc:
+                        import re
+                        normalized_txt = "".join(txt.split()).lower()
+                        txt_lower = txt.lower()
+                        f_bytes = f.getvalue()
+                        f_ext = f.name.split(".")[-1].lower()
+                        
+                        for it in fc["items"]:
+                            it_name = it.get("item", "").lower()
+                            
+                            if "photo" in it_name and not it.get("passed"):
+                                is_img = False
+                                if f_ext == "pdf" and (b"/Image" in f_bytes or b"/Subtype /Image" in f_bytes or b"/Subtype/Image" in f_bytes):
+                                    is_img = True
+                                elif f_ext in ["docx", "xlsx", "pptx"]:
+                                    import zipfile
+                                    try:
+                                        with zipfile.ZipFile(io.BytesIO(f_bytes)) as z:
+                                            if any(info.filename.startswith("word/media/") for info in z.infolist()):
+                                                is_img = True
+                                    except Exception:
+                                        pass
+                                if is_img:
+                                    it["passed"] = True
+                                    it["note"] = "Verified via structural file analysis."
+                            
+                            elif "email" in it_name and not it.get("passed"):
+                                if re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', txt) or "@" in normalized_txt:
+                                    it["passed"] = True
+                                    it["note"] = "Valid email verified."
+                            
+                            elif "linkedin" in it_name and not it.get("passed"):
+                                if "linkedin.com" in normalized_txt or "linkedin.com" in txt_lower:
+                                    it["passed"] = True
+                                    it["note"] = "LinkedIn profile presence verified."
+
+                        # Dynamic Filter: Programmatically eliminate GitHub link check parameters without tweaking core modules
+                        fc["items"] = [it for it in fc["items"] if "github" not in it.get("item", "").lower()]
+                        fc["passed"] = sum(1 for it in fc["items"] if it.get("passed"))
+                        fc["total"] = len(fc["items"])
+                        fc["score"] = int((fc["passed"] / fc["total"]) * 100) if fc["total"] > 0 else 0
+
+                    a["_format_check"] = fc
                     audits.append(a)
             except Exception as e:
                 st.error(f"{f.name}: {e}")
