@@ -49,7 +49,38 @@ header {visibility: hidden; display: none;}
 </style>
 """
 st.markdown(HIDE_STREAMLIT_HEADER, unsafe_allow_html=True)
+#-----------------------------Photo Function---------------------------------------------------------------
+def detect_profile_photo_pdf(file_bytes):
+    try:
+        import fitz  # PyMuPDF
 
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
+
+        if len(doc) == 0:
+            return False
+
+        page = doc[0]
+
+        for img in page.get_images(full=True):
+            xref = img[0]
+            image = doc.extract_image(xref)
+
+            width = image.get("width", 0)
+            height = image.get("height", 0)
+
+            # Ignore tiny icons/logos
+            if (
+                width >= 100
+                and height >= 100
+                and 0.7 <= (width / max(height, 1)) <= 1.4
+            ):
+                return True
+
+        return False
+
+    except Exception:
+        return False
+#-----------------------------------    Photo End Function ------------------------------------------------
 # ---------------- LOGOUT CONFIRMATION MODAL ----------------
 @st.dialog("Confirm Sign Out")
 def show_logout_dialog():
@@ -668,22 +699,19 @@ if mode == "Single Audit":
                         it_name = it.get("item", "").lower()
                         
                         # Fallback for profile photo validation via binary streams
-                        if "photo" in it_name and not it.get("passed"):
-                            is_img = False
-                            if ext == "pdf" and (b"/Image" in file_bytes or b"/Subtype /Image" in file_bytes or b"/Subtype/Image" in file_bytes):
-                                is_img = True
-                            elif ext in ["docx", "xlsx", "pptx"]:
-                                import zipfile
-                                try:
-                                    with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
-                                        if any(info.filename.startswith("word/media/") for info in z.infolist()):
-                                            is_img = True
-                                except Exception:
-                                    pass
-                            if is_img:
+                        if "photo" in it_name:
+                            has_photo = False
+
+                            if ext == "pdf":
+                                has_photo = detect_profile_photo_pdf(file_bytes)
+
+                            if has_photo:
                                 it["passed"] = True
-                                it["note"] = "Verified via structural file analysis."
-                        
+                                it["note"] = "Profile photograph detected."
+                            else:
+                                    it["passed"] = False
+                                    it["note"] = "No profile photograph detected."
+                                
                         # Fallback for emails ignoring space/case nuances
                         elif "email" in it_name and not it.get("passed"):
                             if re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text) or "@" in normalized_text:
@@ -776,21 +804,9 @@ elif mode == "Bulk Audit":
                         for it in fc["items"]:
                             it_name = it.get("item", "").lower()
                             
-                            if "photo" in it_name and not it.get("passed"):
-                                is_img = False
-                                if f_ext == "pdf" and (b"/Image" in f_bytes or b"/Subtype /Image" in f_bytes or b"/Subtype/Image" in f_bytes):
-                                    is_img = True
-                                elif f_ext in ["docx", "xlsx", "pptx"]:
-                                    import zipfile
-                                    try:
-                                        with zipfile.ZipFile(io.BytesIO(f_bytes)) as z:
-                                            if any(info.filename.startswith("word/media/") for info in z.infolist()):
-                                                is_img = True
-                                    except Exception:
-                                        pass
-                                if is_img:
-                                    it["passed"] = True
-                                    it["note"] = "Verified via structural file analysis."
+                            if "photo" in it_name:
+                                it["passed"] = False
+                                it["note"] = "No verified profile photograph detected."
                             
                             elif "email" in it_name and not it.get("passed"):
                                 if re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', txt) or "@" in normalized_txt:
