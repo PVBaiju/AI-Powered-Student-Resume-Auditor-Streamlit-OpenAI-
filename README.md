@@ -1,4 +1,5 @@
-![Uploading Arch-diagram-streamlit cloud.png…]()
+
+<img width="1973" height="528" alt="Arch-diagram-streamlit cloud" src="https://github.com/user-attachments/assets/f6eb154e-df25-456d-9bad-7722c2bf9eb3" />
 
 Action: file_editor create /app/streamlit_resume_auditor/README.md --file-text "# Resume Audit Agent (Streamlit + OpenAI)
 
