@@ -1,3 +1,4 @@
+![Uploading Arch-diagram-streamlit cloud.png…]()
 
 Action: file_editor create /app/streamlit_resume_auditor/README.md --file-text "# Resume Audit Agent (Streamlit + OpenAI)
 
